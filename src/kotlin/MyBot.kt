@@ -6,8 +6,9 @@ object MyBot {
         val enoughHalite = Game.me.halite >= SHIP_COST
         val shipyardFree = !Game.me.shipyard.mapCell.hasShip || !Game.me.shipyard.mapCell.ship!!.isMine
         val noShipsWaiting = Game.me.shipyard.mapCell.reachableCells.none { it.ship?.onWayBack == true }
-        val enoughHaliteAvailable = Game.map.currentHalite.toDouble() / Game.map.totalHalite > 0.45
-        if (enoughHalite && shipyardFree && enoughHaliteAvailable && noShipsWaiting) {
+        //val enoughHaliteAvailable = Game.map.currentHalite.toDouble() / Game.map.totalHalite > 0.45
+        val shouldBuild = Game.turnsLeft > 150
+        if (enoughHalite && shipyardFree && shouldBuild && noShipsWaiting) {
             Game.map.buildShip()
             Log.log("Building ship")
         }
@@ -36,7 +37,7 @@ object MyBot {
 
         } else {
             iterateByDistance(ship.position).forEach {
-                if (it.reward > 30) {
+                if (it.reward > 20) {
                     if (it.isTargetEmpty || it.ship == ship) {
                         ship.targetPosition(it.position)
                         return
@@ -47,10 +48,41 @@ object MyBot {
         }
     }
 
+    fun defaultStrategy() {
+        Game.me.ships.forEach { ship ->
+            findBestLocationForShip(ship)
+        }
+    }
+
+    fun endGameSuicideStrategy() {
+        val ships = Game.me.ships
+
+        if (ships.isEmpty())
+            return
+
+        val shipToDropoffDistances = ships.map {
+            val nextDropoff = nextDropoff(it.position)
+            calculateDistance(it.position, nextDropoff.position)
+        }
+
+        if (shipToDropoffDistances.max()!! >= Game.turnsLeft) {
+            ships.forEach { ship ->
+                ship.endGameSuicide = true
+                if (!ship.canMove) {
+                    ship.dig()
+                } else {
+                    ship.targetDropoff()
+                }
+            }
+        } else {
+            defaultStrategy()
+        }
+    }
+
     @JvmStatic
     fun main(args: Array<String>) {
         Game.init()
-        Game.ready("BloodWork")
+        Game.ready("leisim")
 
         Log.log("Successfully created bot! My Player ID is ${Game.myId}.")
 
@@ -59,11 +91,11 @@ object MyBot {
             Game.updateFrame()
 
             checkShouldBuildShip()
-            Game.me.ships.forEach { ship ->
-                findBestLocationForShip(ship)
-                if (ship.target == null && ship.id != -1) {
-                    Log.log("")
-                }
+
+            if (Game.turnsLeft > 50) {
+                defaultStrategy()
+            } else {
+                endGameSuicideStrategy()
             }
 
             Navigator().doNavigation()

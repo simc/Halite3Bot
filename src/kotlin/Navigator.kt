@@ -2,7 +2,6 @@ import java.lang.IllegalStateException
 
 class Navigator {
     fun doNavigation() {
-        shipLoop@
         for (ship in Game.me.ships) {
             if (ship.id == -1) {
                 Game.sendCommand(Command.spawnShip())
@@ -67,6 +66,10 @@ class Navigator {
 
     private fun trySwapInDirection(ship: Ship, direction: Direction): Boolean {
         val newPosition = ship.position.directionalOffset(direction)
+        if (!isAllowedOnPosition(ship, newPosition)) {
+            return false
+        }
+
         val newCell = Game.map.at(newPosition)
         val otherShip = newCell.ship
         if (otherShip != null && otherShip.isMine && !otherShip.navigationFinished) {
@@ -90,11 +93,19 @@ class Navigator {
 
     private fun tryMoveInDirection(ship: Ship, direction: Direction, navigateBlockingShip: Boolean = false): Boolean {
         val newPosition = ship.position.directionalOffset(direction)
+        if (!isAllowedOnPosition(ship, newPosition)) {
+            return false
+        }
+
         val cell = Game.map.at(newPosition)
         if (cell.hasShip) {
             val otherShip = cell.ship!!
             if (otherShip.isMine) {
-                if (navigateBlockingShip) {
+                if (ship.endGameSuicide && otherShip.endGameSuicide && cell.structure?.isMine == true) {
+                    moveInDirection(ship, direction)
+                    return true
+
+                } else if (navigateBlockingShip) {
                     navigateShip(otherShip)
                     return tryMoveInDirection(ship, direction)
                 }
@@ -118,5 +129,10 @@ class Navigator {
         ship.mapCell.ship = ship
 
         sendMove(ship, direction)
+    }
+
+    private fun isAllowedOnPosition(ship: Ship, position: Position): Boolean {
+        val isDropoff = Game.map.at(position).structure?.isMine == true
+        return !isDropoff || ship.onWayBack || ship.endGameSuicide
     }
 }

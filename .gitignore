@@ -1,0 +1,10 @@
+*.iml
+/local.properties
+/.idea
+.DS_Store
+/build
+/out
+/hlt_gym
+/replay
+gym_run.sh
+*.log

@@ -3,9 +3,10 @@ class Ship(owner: Int, id: Int, position: Position, val halite: Int) : Entity(ow
     var target: MapCell? = null
     var onWayBack = false
     var navigationFinished = false
+    var endGameSuicide = false
 
     val isFull: Boolean
-        get() = halite >= Constants.MAX_HALITE * 0.90
+        get() = halite >= Constants.MAX_HALITE * 0.95
 
     fun removeTarget() {
         if (target != null) {
