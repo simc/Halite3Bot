@@ -17,7 +17,7 @@ buildscript {
 }
 
 sourceSets {
-    main.kotlin.srcDirs += 'src/kotlin'
+    main.kotlin.srcDirs += 'src'
 }
 
 repositories {

@@ -1,4 +1,6 @@
+#!/bin/sh
 mkdir replay
 rm -rf replay/*
 ./gradlew submission
-./halite -vvv --width 64 --height 64 --seed 4  --replay-directory replay/ "java -jar build/libs/MyBot.jar" "java -jar build/libs/MyBot.jar"
+SEED="$(awk -v min=5 -v max=10000000 'BEGIN{srand(); print int(min+rand()*(max-min+1))}')"
+./halite -vvv --width 64 --height 64 --seed $SEED --no-logs --replay-directory replay/ "java -jar bot/build/libs/MyBot.jar" "java -jar TestBot.jar"

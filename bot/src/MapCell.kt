@@ -8,6 +8,7 @@ class MapCell(val position: Position, var halite: Int) {
     var structure: Entity? = null
     var targetOf = arrayListOf<Ship>()
     var passCount = 0
+    var reserved = false // No ship is allowed to move to this cell
 
     val isEmpty: Boolean
         get() = ship == null && structure == null

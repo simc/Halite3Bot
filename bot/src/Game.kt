@@ -3,13 +3,19 @@ import java.util.*
 object Game {
     var turnNumber = 0
     var myId = -1
+
     val players: ArrayList<Player> = ArrayList()
-    lateinit var me: Player
     lateinit var map: GameMap
+
+    val history = History()
+
     private var commands = arrayListOf<Command>()
 
+    val me: Player
+        get() = players[myId]
+
     val turnsLeft: Int
-        get() = Constants.MAX_TURNS - turnNumber - 1
+        get() = Constants.MAX_TURNS - turnNumber
 
     fun init() {
         Constants.populateConstants(Input.readLine())
@@ -23,7 +29,6 @@ object Game {
         for (i in 0 until numPlayers) {
             players.add(Player._generate())
         }
-        me = players.get(myId)
         map = GameMap._generate()
     }
 
@@ -33,9 +38,11 @@ object Game {
 
     fun updateFrame() {
         commands = arrayListOf()
-        turnNumber = Input.readInput().nextInt
+        turnNumber = Input.readInput().nextInt - 1
 
         Log.log("=============== TURN $turnNumber ================")
+
+        history.turns.add(HistoryEntry(turnNumber))
 
         for (i in 0 until players.size) {
             val input = Input.readInput()
@@ -61,5 +68,31 @@ object Game {
             System.out.print(' ')
         }
         System.out.println()
+    }
+}
+
+class History {
+    val turns = arrayListOf<HistoryEntry>()
+
+    val currentTurn: HistoryEntry
+        get() = turns[Game.turnNumber]
+
+    val lastTurn: HistoryEntry?
+        get() = turns.getOrNull(Game.turnNumber - 1)
+}
+
+class HistoryEntry(val turnNumber: Int) {
+    private val moves = arrayListOf<Pair<Int, Direction>>()
+
+    var builtShip = false
+    var planBuildingDropOff = false
+    var buildDropoff = false
+
+    fun doMove(ship: Ship, direction: Direction) {
+        moves.add(Pair(ship.id, direction))
+    }
+
+    fun getMove(ship: Ship): Direction? {
+        return moves.firstOrNull { it.first == ship.id }?.second
     }
 }

@@ -19,8 +19,7 @@ fun normalize(position: Position): Position {
 }
 
 fun nextDropoff(position: Position): Entity {
-    val dropoffs = Game.me.dropoffs + Game.me.shipyard
-    return dropoffs.minBy {
+    return Game.me.allDropoffs.minBy {
         calculateDistance(it.position, position)
     }!!
 }

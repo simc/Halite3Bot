@@ -1,9 +1,10 @@
-import java.util.*
-
 class Player private constructor(val id: Int, val shipyard: Shipyard) {
     var halite: Int = 0
     var ships = arrayListOf<Ship>()
     val dropoffs = arrayListOf<DropOff>()
+
+    val allDropoffs: List<Entity>
+        get() = dropoffs + shipyard
 
     internal fun _update(numShips: Int, numDropoffs: Int, halite: Int) {
         this.halite = halite

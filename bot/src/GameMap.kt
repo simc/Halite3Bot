@@ -55,13 +55,6 @@ class GameMap(val size: Int) {
         return possibleMoves
     }
 
-    fun buildShip() {
-        val ship = Ship(Game.myId, -1, Game.me.shipyard.position, 0)
-        ship.mapCell.ship = ship
-        ship.navigationFinished = true
-        Game.me.ships.add(ship)
-    }
-
     internal fun _update() {
         for (x in 0 until size) {
             for (y in 0 until size) {
@@ -77,7 +70,7 @@ class GameMap(val size: Int) {
             val y = input.nextInt
 
             cells[x][y].halite = input.nextInt
-            if (Game.turnNumber == 1)
+            if (Game.turnNumber == 0)
                 totalHalite += cells[x][y].halite
         }
 
