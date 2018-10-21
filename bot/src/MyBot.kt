@@ -16,6 +16,7 @@ object MyBot {
         val shipyardCell = Game.me.shipyard.mapCell
         val shipyardDirectionFree = !shipyardCell.hasShip || shipyardCell.reachableCells.any { it.isEmpty }
 
+        //If there are ships waiting near the shipyard, there is a ship built only every third frame
         val shipsWaiting = shipyardCell.reachableCells.any { it.ship?.isOnWayBack == true }
         val lastTurnsShipBuilt = Game.history.turns.takeLast(2).any(HistoryEntry::builtShip)
         val disableBuildShip = shipsWaiting && lastTurnsShipBuilt

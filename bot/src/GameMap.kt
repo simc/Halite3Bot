@@ -55,7 +55,11 @@ class GameMap(val size: Int) {
         return possibleMoves
     }
 
-    internal fun _update() {
+    private fun findHaliteFields() {
+        
+    }
+
+    fun _update() {
         for (x in 0 until size) {
             for (y in 0 until size) {
                 cells[x][y] = MapCell(Position(x, y), cells[x][y].halite)
