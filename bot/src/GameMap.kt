@@ -55,10 +55,6 @@ class GameMap(val size: Int) {
         return possibleMoves
     }
 
-    private fun findHaliteFields() {
-        
-    }
-
     fun _update() {
         for (x in 0 until size) {
             for (y in 0 until size) {
@@ -74,8 +70,6 @@ class GameMap(val size: Int) {
             val y = input.nextInt
 
             cells[x][y].halite = input.nextInt
-            if (Game.turnNumber == 0)
-                totalHalite += cells[x][y].halite
         }
 
         //Update ships and structures in cells
@@ -103,7 +97,9 @@ class GameMap(val size: Int) {
             for (y in 0 until size) {
                 val rowInput = Input.readInput()
                 for (x in 0 until size) {
-                    map.cells[x][y].halite = rowInput.nextInt
+                    val halite = rowInput.nextInt
+                    map.cells[x][y].halite = halite
+                    map.totalHalite += halite
                 }
             }
 

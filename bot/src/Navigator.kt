@@ -21,13 +21,15 @@ class Navigator {
         }
 
         if (ship.target == null)
-            throw IllegalStateException("Target of ship #${ship.id} is null")
+            throw IllegalStateException("Target is null: $ship")
 
         if (ship.task == Ship.Task.NONE)
-            throw IllegalStateException("Task of ship #${ship.id} is not set")
+            throw IllegalStateException("Task is not set: $ship")
 
-        if (ship.target == ship.mapCell)
-            return
+        if (ship.target == ship.mapCell) {
+            Log.log(ship.toString())
+            throw IllegalStateException("Ship arrived with no command: $ship")
+        }
 
         val moves = Game.map.getUnsafeMoves(ship.position, ship.target!!.position).shuffled()
 
@@ -56,7 +58,7 @@ class Navigator {
 
         //Move in other direction if not near a dropoff
         if (moves.size < 4) {
-            if (!ship.isOnWayBack || calculateDistance(ship.position, nextDropoff(ship.position).position) > 2) {
+            if (!ship.isOnWayBack || ship.mapCell.nextDropOffDistance > 2) {
                 val movesLeft = (Direction.ALL_CARDINALS - moves).shuffled().toMutableList()
                 val lastMove = Game.history.lastTurn?.getMove(ship)
 
@@ -70,8 +72,23 @@ class Navigator {
                 //Is a move in inverted direction possible?
                 val oppositeMove = if (lastMove != null) movesLeft.remove(lastMove.invertDirection()) else false
 
-                //Try all other moves
+                val awayMoves = moves.mapNotNull {
+                    val direction = it.invertDirection()
+                    if (movesLeft.remove(direction))
+                        direction
+                    else
+                        null
+                }
+
+                //Try all left moves
                 for (move in movesLeft) {
+                    if (tryMoveInDirection(ship, move)) {
+                        return
+                    }
+                }
+
+                //Try to move away from blocking ship
+                for (move in awayMoves) {
                     if (tryMoveInDirection(ship, move)) {
                         return
                     }
@@ -123,7 +140,7 @@ class Navigator {
         return false
     }
 
-    private fun tryMoveInDirection(ship: Ship, direction: Direction, navigateBlockingShip: Boolean = false): Boolean {
+    private fun tryMoveInDirection(ship: Ship, direction: Direction, moveBlockingShip: Boolean = false): Boolean {
         fun performMove() {
             ship.mapCell.ship = null
             ship.position = ship.position.directionalOffset(direction)
@@ -146,7 +163,7 @@ class Navigator {
                     performMove()
                     return true
 
-                } else if (navigateBlockingShip && !otherShip.isNavigationFinished) {
+                } else if (moveBlockingShip && !otherShip.isNavigationFinished) {
                     navigateShip(otherShip, moveBlockingShips = false)
                     return tryMoveInDirection(ship, direction)
                 }
@@ -156,7 +173,7 @@ class Navigator {
                 return true
             }
 
-        } else if (cell.structure?.isMine != false) { //Dont go over enemy dropoffs
+        } else if (cell.structure?.isMine != false) { //Don't go over enemy dropoffs
             performMove()
             return true
         }
@@ -166,14 +183,20 @@ class Navigator {
 
     private fun isAllowedOnPosition(ship: Ship, position: Position): Boolean {
         val cell = Game.map.at(position)
-        val isDropoff = cell.structure?.isMine == true
+        val isDropOff = cell.structure?.isMine == true
         val noFullShipNearby = iterateByDistance(position, 2).none { it.ship?.isOnWayBack == true }
-        return (!isDropoff || ship.isOnWayBack || ship.isEndGameSuicide || noFullShipNearby) && !cell.reserved
+        return (!isDropOff || ship.isOnWayBack || ship.isEndGameSuicide || noFullShipNearby) && !cell.reserved
     }
 
     private fun sendNavigation(ship: Ship) {
-        Game.sendCommand(Command.move(ship.id, ship.navDirection!!))
-        ship.commandSent = true
-        Game.history.currentTurn.doMove(ship, ship.navDirection!!)
+        if (ship.navAction == Ship.NavAction.BUILD_DROP_OFF) {
+            Game.sendCommand(Command.transformShipIntoDropoffSite(ship.id))
+            ship.commandSent = true
+            Game.history.currentTurn.doMove(ship, ship.navDirection!!)
+        } else {
+            Game.sendCommand(Command.move(ship.id, ship.navDirection!!))
+            ship.commandSent = true
+            Game.history.currentTurn.doMove(ship, ship.navDirection!!)
+        }
     }
 }

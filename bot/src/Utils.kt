@@ -18,12 +18,6 @@ fun normalize(position: Position): Position {
     return Position(x, y)
 }
 
-fun nextDropoff(position: Position): Entity {
-    return Game.me.allDropoffs.minBy {
-        calculateDistance(it.position, position)
-    }!!
-}
-
 fun enemiesInRange(position: Position, range: Int): Int {
     return iterateByDistance(position, endDistance = range).sumBy {
         if (it.hasShip && it.ship!!.owner != Game.myId)
@@ -35,7 +29,7 @@ fun enemiesInRange(position: Position, range: Int): Int {
 
 fun iterateByDistance(start: Position, startDistance: Int = 0, endDistance: Int? = null) = sequence {
     var tempStartDistance = startDistance
-    val tempEndDistance = endDistance ?: Game.map.size-1
+    val tempEndDistance = endDistance ?: Game.map.size - 1
 
     if (startDistance == 0) {
         yield(Game.map.at(start))

@@ -167,6 +167,10 @@ class Position(val x: Int, val y: Int) {
         return Position(x + dx, y + dy)
     }
 
+    override fun toString(): String {
+        return "($x, $y)"
+    }
+
     override fun equals(other: Any?): Boolean {
         return other != null && other is Position && other.x == x && other.y == y
     }
@@ -226,11 +230,11 @@ class Log private constructor(private val file: FileWriter) {
         private val LOG_BUFFER = ArrayList<String>()
 
         init {
-            //Runtime.getRuntime().addShutdownHook(AtExit())
+            Runtime.getRuntime().addShutdownHook(AtExit())
         }
 
         internal fun open(botId: Int) {
-            /*if (INSTANCE != null) {
+            if (INSTANCE != null) {
                 Log.log("Error: log: tried to open($botId) but we have already opened before.")
                 throw IllegalStateException()
             }
@@ -253,11 +257,11 @@ class Log private constructor(private val file: FileWriter) {
                 throw IllegalStateException(e)
             }
 
-            LOG_BUFFER.clear()*/
+            LOG_BUFFER.clear()
         }
 
         fun log(message: String) {
-            /*if (INSTANCE == null) {
+            if (INSTANCE == null) {
                 LOG_BUFFER.add(message)
                 return
             }
@@ -266,7 +270,7 @@ class Log private constructor(private val file: FileWriter) {
                 INSTANCE!!.file.append(message).append('\n').flush()
             } catch (e: IOException) {
                 e.printStackTrace()
-            }*/
+            }
         }
     }
 }

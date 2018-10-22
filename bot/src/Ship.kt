@@ -1,11 +1,11 @@
 class Ship(owner: Int, id: Int, position: Position, val halite: Int) : Entity(owner, id, position) {
 
     enum class Task {
-        NONE, DIG, GOTO_DROPOFF, BUILD_DROPOFF, END_GAME_SUICIDE
+        NONE, DIG, GOTO_DROP_OFF, BUILD_DROP_OFF, END_GAME_SUICIDE, END_GAME_KAMIKAZE
     }
 
     enum class NavAction {
-        NONE, DIG, CHARGE, WAIT, MOVE, BUILD_DROPOFF
+        NONE, DIG, CHARGE, WAIT, MOVE, BUILD_DROP_OFF
     }
 
     var target: MapCell? = null
@@ -21,13 +21,22 @@ class Ship(owner: Int, id: Int, position: Position, val halite: Int) : Entity(ow
         get() = halite >= mapCell.leaveCost
 
     val isOnWayBack: Boolean
-        get() = task == Task.GOTO_DROPOFF
+        get() = task == Task.GOTO_DROP_OFF
+
+    val isBuildingDropOff: Boolean
+        get() = task == Task.BUILD_DROP_OFF
 
     val isEndGameSuicide: Boolean
         get() = task == Task.END_GAME_SUICIDE
 
+    val isEndGameKamikaze: Boolean
+        get() = task == Task.END_GAME_KAMIKAZE
+
     val isNavigationFinished: Boolean
         get() = navAction != NavAction.NONE
+
+    val dropOffCost: Int
+        get() = Constants.DROPOFF_COST - halite - mapCell.halite
 
     fun navMove(direction: Direction) {
         navAction = NavAction.MOVE
@@ -49,21 +58,21 @@ class Ship(owner: Int, id: Int, position: Position, val halite: Int) : Entity(ow
         navDirection = Direction.STILL
     }
 
-    fun targetDig() {
-        navDig()
-        targetPosition(position)
+    fun navBuildDropOff() {
+        navAction = NavAction.BUILD_DROP_OFF
+        navDirection = Direction.STILL
     }
 
-    fun targetDropoff() {
-        targetPosition(nextDropoff(position).position)
-        Log.log("#$id targets dropoff")
+    fun targetDropOff(): Boolean {
+        return targetPosition(mapCell.nextDropOff.position)
     }
 
-    fun targetPosition(position: Position) {
+    fun targetPosition(targetPosition: Position): Boolean {
         removeTarget()
-        val cell = Game.map.at(position)
+        val cell = Game.map.at(targetPosition)
         target = cell
         cell.targetOf.add(this)
+        return position == targetPosition
     }
 
     private fun removeTarget() {
@@ -75,6 +84,10 @@ class Ship(owner: Int, id: Int, position: Position, val halite: Int) : Entity(ow
 
     fun update(oldShip: Ship) {
         task = oldShip.task
+    }
+
+    override fun toString(): String {
+        return "Ship #$id (position: $initialPosition, newPosition: $position, halite: $halite, task: $task, navAction: $navAction, target: ${target?.position ?: "not set"})"
     }
 
     companion object {

@@ -85,8 +85,9 @@ class HistoryEntry(val turnNumber: Int) {
     private val moves = arrayListOf<Pair<Int, Direction>>()
 
     var builtShip = false
-    var planBuildingDropOff = false
-    var buildDropoff = false
+    var plannedDropOff: Position? = null
+    var reservedHalite = 0
+    var builtDropOff = false
 
     fun doMove(ship: Ship, direction: Direction) {
         moves.add(Pair(ship.id, direction))

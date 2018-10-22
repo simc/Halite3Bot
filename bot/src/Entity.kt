@@ -1,4 +1,6 @@
-open class Entity(val owner: Int, val id: Int, var position: Position) {
+open class Entity(val owner: Int, val id: Int, val initialPosition: Position) {
+    var position = initialPosition
+
     val mapCell: MapCell
         get() = Game.map.at(this)
 

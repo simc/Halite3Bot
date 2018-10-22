@@ -5,7 +5,7 @@ import kotlin.math.sign
 import kotlin.random.Random
 
 val availableSizes = listOf(32, 40, 48, 56, 64)
-val processContext = newFixedThreadPoolContext(15, "runProcesses")
+val processContext = newFixedThreadPoolContext(10, "runProcesses")
 val rand = Random(System.currentTimeMillis())
 
 fun main(args: Array<String>) {
@@ -17,11 +17,11 @@ fun main(args: Array<String>) {
 
     val start = System.currentTimeMillis()
     val jobs = availableSizes.flatMap { size ->
-        (1..3).map {
+        (1..10).map {
             gym.runGame(false, size)
         }
 
-        (1..3).map {
+        (1..10).map {
             gym.runGame(true, size)
         }
     }
@@ -83,7 +83,7 @@ class Gym {
         }
         commands += listOf("--width $size", "--height $size", "java -jar ../bot/build/libs/MyBot.jar", "java -jar ../TestBot.jar")
         if (fourPlayers) {
-            commands += listOf("java -jar ../TestBot.jar", "java -jar ../TestBot.jar")
+            commands += listOf("java -jar ../TestBot.jar", "java -jar ../TestBot2.jar")
         }
 
         //println(commands.joinToString(" "))
@@ -98,6 +98,12 @@ class Gym {
         result += process.errorStream.bufferedReader().use { it.readText() }
 
         //println(result)
+
+        if (result.contains("error")) {
+            println(result)
+            println("Error while running game")
+            System.exit(1)
+        }
 
         var enemyHalite = 0
         var count = 0

@@ -1,3 +1,4 @@
+import Constants.EXTRACT_RATIO
 import Constants.INSPIRATION_RADIUS
 import Constants.INSPIRATION_SHIP_COUNT
 import Constants.INSPIRED_BONUS_MULTIPLIER
@@ -28,12 +29,12 @@ class MapCell(val position: Position, var halite: Int) {
     var reward: Int = -1
         get() {
             if (field == -1) {
-                if (enemiesInRange(position, INSPIRATION_RADIUS) >= INSPIRATION_SHIP_COUNT) {
+                field = if (enemiesInRange(position, INSPIRATION_RADIUS) >= INSPIRATION_SHIP_COUNT) {
                     val extractAmount = halite.toDouble() / INSPIRED_EXTRACT_RATIO
-                    val extractBonus = extractAmount / INSPIRED_BONUS_MULTIPLIER
-                    field = Math.ceil(extractAmount + extractBonus).toInt()
+                    val extractBonus = extractAmount * INSPIRED_BONUS_MULTIPLIER
+                    Math.ceil(extractAmount + extractBonus).toInt()
                 } else {
-                    field = Math.ceil(halite.toDouble() / INSPIRED_EXTRACT_RATIO).toInt()
+                    Math.ceil(halite.toDouble() / EXTRACT_RATIO).toInt()
                 }
             }
             return field
@@ -48,6 +49,29 @@ class MapCell(val position: Position, var halite: Int) {
                 Game.map.at(position.directionalOffset(Direction.WEST))
         )
 
+    private var nextDropOffCache: Entity? = null
+    val nextDropOff: Entity
+        get() {
+            if (nextDropOffCache == null) {
+                var minDistance = Int.MAX_VALUE
+                for (dropOff in Game.me.allDropoffs) {
+                    val distance = calculateDistance(dropOff.position, position)
+                    if (distance < minDistance) {
+                        nextDropOffCache = dropOff
+                        minDistance = distance
+                    }
+                }
+            }
+
+            return nextDropOffCache!!
+        }
+
+    val nextDropOffDistance: Int
+        get() = calculateDistance(nextDropOff.position, position)
+
+    override fun toString(): String {
+        return "cell $position"
+    }
 
     override fun equals(other: Any?): Boolean {
         return other != null && other is MapCell && other.position == position
