@@ -5,6 +5,7 @@ object Game {
     var myId = -1
 
     val players: ArrayList<Player> = ArrayList()
+
     lateinit var map: GameMap
 
     val history = History()
@@ -17,6 +18,12 @@ object Game {
     val turnsLeft: Int
         get() = Constants.MAX_TURNS - turnNumber
 
+    val ships: List<Ship>
+        get() = players.flatMap { it.ships }
+
+    val structures: List<Entity>
+        get() = players.flatMap { it.allDropoffs }
+
     fun init() {
         Constants.populateConstants(Input.readLine())
 
@@ -27,9 +34,17 @@ object Game {
         Log.open(myId)
 
         for (i in 0 until numPlayers) {
-            players.add(Player._generate())
+            players.add(generatePlayer())
         }
         map = GameMap._generate()
+    }
+
+    private fun generatePlayer(): Player {
+        val input = Input.readInput()
+
+        val playerId = input.nextInt
+        val position = Position(input.nextInt, input.nextInt)
+        return Player(playerId, Shipyard(playerId, position))
     }
 
     fun ready(name: String) {
@@ -38,24 +53,34 @@ object Game {
 
     fun updateFrame() {
         commands = arrayListOf()
-        turnNumber = Input.readInput().nextInt - 1
+        turnNumber = Input.readInput().nextInt
 
         Log.log("=============== TURN $turnNumber ================")
 
         history.turns.add(HistoryEntry(turnNumber))
 
-        for (i in 0 until players.size) {
+        for (player in players) {
             val input = Input.readInput()
 
-            val currentPlayerId = input.nextInt
+            @Suppress("UNUSED_VARIABLE")
+            val playerId = input.nextInt
             val numShips = input.nextInt
             val numDropoffs = input.nextInt
             val halite = input.nextInt
 
-            players.get(currentPlayerId)._update(numShips, numDropoffs, halite)
+            player.update(numShips, numDropoffs, halite)
         }
 
-        map._update()
+        map.update()
+
+        //Last: add shipyards, ships and dropoffs to map
+        ships.forEach {
+            it.updatePosition()
+            it.updateFromOldShip()
+        }
+        structures.forEach {
+            it.updatePosition()
+        }
     }
 
     fun sendCommand(command: Command) {
@@ -75,19 +100,19 @@ class History {
     val turns = arrayListOf<HistoryEntry>()
 
     val currentTurn: HistoryEntry
-        get() = turns[Game.turnNumber]
+        get() = turns[Game.turnNumber - 1]
 
     val lastTurn: HistoryEntry?
-        get() = turns.getOrNull(Game.turnNumber - 1)
+        get() = turns.getOrNull(Game.turnNumber - 2)
 }
 
 class HistoryEntry(val turnNumber: Int) {
     private val moves = arrayListOf<Pair<Int, Direction>>()
 
     var builtShip = false
-    var plannedDropOff: Position? = null
+    var plannedDropoff: Position? = null
     var reservedHalite = 0
-    var builtDropOff = false
+    var builtDropoff = false
 
     fun doMove(ship: Ship, direction: Direction) {
         moves.add(Pair(ship.id, direction))

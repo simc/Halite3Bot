@@ -1,7 +1,7 @@
 
 fun calculateDistance(source: Position, target: Position): Int {
-    val normalizedSource = normalize(source)
-    val normalizedTarget = normalize(target)
+    val normalizedSource = source.normalize()
+    val normalizedTarget = target.normalize()
 
     val dx = Math.abs(normalizedSource.x - normalizedTarget.x)
     val dy = Math.abs(normalizedSource.y - normalizedTarget.y)
@@ -10,12 +10,6 @@ fun calculateDistance(source: Position, target: Position): Int {
     val toroidalDy = Math.min(dy, Game.map.size - dy)
 
     return toroidalDx + toroidalDy
-}
-
-fun normalize(position: Position): Position {
-    val x = (position.x % Game.map.size + Game.map.size) % Game.map.size
-    val y = (position.y % Game.map.size + Game.map.size) % Game.map.size
-    return Position(x, y)
 }
 
 fun enemiesInRange(position: Position, range: Int): Int {

@@ -17,11 +17,11 @@ fun main(args: Array<String>) {
 
     val start = System.currentTimeMillis()
     val jobs = availableSizes.flatMap { size ->
-        (1..10).map {
+        (1..8).map {
             gym.runGame(false, size)
         }
 
-        (1..10).map {
+        (1..8).map {
             gym.runGame(true, size)
         }
     }
@@ -83,7 +83,7 @@ class Gym {
         }
         commands += listOf("--width $size", "--height $size", "java -jar ../bot/build/libs/MyBot.jar", "java -jar ../TestBot.jar")
         if (fourPlayers) {
-            commands += listOf("java -jar ../TestBot.jar", "java -jar ../TestBot2.jar")
+            commands += listOf("java -jar ../TestBot.jar", "java -jar ../TestBot.jar")
         }
 
         //println(commands.joinToString(" "))

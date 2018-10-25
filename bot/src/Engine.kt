@@ -167,6 +167,12 @@ class Position(val x: Int, val y: Int) {
         return Position(x + dx, y + dy)
     }
 
+    fun normalize(): Position {
+        val x = (x % Game.map.size + Game.map.size) % Game.map.size
+        val y = (y % Game.map.size + Game.map.size) % Game.map.size
+        return Position(x, y)
+    }
+
     override fun toString(): String {
         return "($x, $y)"
     }

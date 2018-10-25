@@ -3,12 +3,15 @@ import Constants.INSPIRATION_RADIUS
 import Constants.INSPIRATION_SHIP_COUNT
 import Constants.INSPIRED_BONUS_MULTIPLIER
 import Constants.INSPIRED_EXTRACT_RATIO
+import java.lang.reflect.Field
 
 class MapCell(val position: Position, var halite: Int) {
     var ship: Ship? = null
+        @Deprecated("Updated by entity") set
     var structure: Entity? = null
+        @Deprecated("Updated by entity") set
+
     var targetOf = arrayListOf<Ship>()
-    var passCount = 0
     var reserved = false // No ship is allowed to move to this cell
 
     val isEmpty: Boolean
@@ -49,28 +52,31 @@ class MapCell(val position: Position, var halite: Int) {
                 Game.map.at(position.directionalOffset(Direction.WEST))
         )
 
-    private var nextDropOffCache: Entity? = null
-    val nextDropOff: Entity
+    private var nextDropoffCache: Entity? = null
+    val nextDropoff: Entity
         get() {
-            if (nextDropOffCache == null) {
+            if (nextDropoffCache == null) {
                 var minDistance = Int.MAX_VALUE
-                for (dropOff in Game.me.allDropoffs) {
-                    val distance = calculateDistance(dropOff.position, position)
+                for (dropoff in Game.me.allDropoffs) {
+                    val distance = calculateDistance(dropoff.position, position)
                     if (distance < minDistance) {
-                        nextDropOffCache = dropOff
+                        nextDropoffCache = dropoff
                         minDistance = distance
                     }
                 }
             }
 
-            return nextDropOffCache!!
+            return nextDropoffCache!!
         }
 
-    val nextDropOffDistance: Int
-        get() = calculateDistance(nextDropOff.position, position)
+    val nextDropoffDistance: Int
+        get() = calculateDistance(nextDropoff.position, position)
+
+    var field: Field? = null
+    val fieldEdges = booleanArrayOf(false, false, false, false)
 
     override fun toString(): String {
-        return "cell $position"
+        return "cell $position " + targetOf.joinToString()
     }
 
     override fun equals(other: Any?): Boolean {

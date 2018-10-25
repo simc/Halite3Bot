@@ -1,14 +1,29 @@
-class Ship(owner: Int, id: Int, position: Position, val halite: Int) : Entity(owner, id, position) {
+import java.util.ArrayList
+
+class Ship(owner: Int, id: Int, position: Position, val halite: Int, val oldShip: Ship?) : Entity(owner, id, position) {
 
     enum class Task {
-        NONE, DIG, GOTO_DROP_OFF, BUILD_DROP_OFF, END_GAME_SUICIDE, END_GAME_KAMIKAZE
+        NONE, DIG, GOTO_DROPOFF, BUILD_DROPOFF, END_GAME_SUICIDE, END_GAME_KAMIKAZE
     }
 
     enum class NavAction {
-        NONE, DIG, CHARGE, WAIT, MOVE, BUILD_DROP_OFF
+        NONE, DIG, CHARGE, WAIT, BLOCKED, MOVE, BUILD_DROPOFF
     }
 
-    var target: MapCell? = null
+    var target: Position? = null
+        set(value) {
+            if (field != null) {
+                Game.map.at(field!!).targetOf.remove(this)
+            }
+            field = value
+            if (value != null) {
+                Game.map.at(value).targetOf.add(this)
+            }
+        }
+
+    val reachedTarget: Boolean
+        get() = target == null || target == position
+
     var task = Task.NONE
     var navAction = NavAction.NONE
     var navDirection: Direction? = null
@@ -21,10 +36,10 @@ class Ship(owner: Int, id: Int, position: Position, val halite: Int) : Entity(ow
         get() = halite >= mapCell.leaveCost
 
     val isOnWayBack: Boolean
-        get() = task == Task.GOTO_DROP_OFF
+        get() = task == Task.GOTO_DROPOFF
 
-    val isBuildingDropOff: Boolean
-        get() = task == Task.BUILD_DROP_OFF
+    val isBuildingDropoff: Boolean
+        get() = task == Task.BUILD_DROPOFF
 
     val isEndGameSuicide: Boolean
         get() = task == Task.END_GAME_SUICIDE
@@ -35,7 +50,7 @@ class Ship(owner: Int, id: Int, position: Position, val halite: Int) : Entity(ow
     val isNavigationFinished: Boolean
         get() = navAction != NavAction.NONE
 
-    val dropOffCost: Int
+    val dropoffCost: Int
         get() = Constants.DROPOFF_COST - halite - mapCell.halite
 
     fun navMove(direction: Direction) {
@@ -58,48 +73,54 @@ class Ship(owner: Int, id: Int, position: Position, val halite: Int) : Entity(ow
         navDirection = Direction.STILL
     }
 
-    fun navBuildDropOff() {
-        navAction = NavAction.BUILD_DROP_OFF
+    fun navBuildDropoff() {
+        navAction = NavAction.BUILD_DROPOFF
         navDirection = Direction.STILL
     }
 
-    fun targetDropOff(): Boolean {
-        return targetPosition(mapCell.nextDropOff.position)
+    fun isAllowedOnPosition(position: Position): Boolean {
+        val cell = Game.map.at(position)
+        val isDropoff = cell.structure?.isMine == true
+        val noFullShipNearby = iterateByDistance(position, 2).none { it.ship?.isOnWayBack == true }
+        return (!isDropoff || isOnWayBack || isEndGameSuicide || noFullShipNearby) && !cell.reserved
     }
 
-    fun targetPosition(targetPosition: Position): Boolean {
-        removeTarget()
-        val cell = Game.map.at(targetPosition)
-        target = cell
-        cell.targetOf.add(this)
-        return position == targetPosition
-    }
+    val optimalMoves: ArrayList<Direction>
+        get() {
+            val possibleMoves = ArrayList<Direction>()
 
-    private fun removeTarget() {
-        if (target != null) {
-            target!!.targetOf.remove(this)
-            target = null
+            val dx = Math.abs(position.x - target!!.x)
+            val dy = Math.abs(position.y - target!!.y)
+            val wrappedDx = Game.map.size - dx
+            val wrappedDy = Game.map.size - dy
+
+            if (position.x < target!!.x) {
+                possibleMoves.add(if (dx > wrappedDx) Direction.WEST else Direction.EAST)
+            } else if (position.x > target!!.x) {
+                possibleMoves.add(if (dx < wrappedDx) Direction.WEST else Direction.EAST)
+            }
+
+            if (position.y < target!!.y) {
+                possibleMoves.add(if (dy > wrappedDy) Direction.NORTH else Direction.SOUTH)
+            } else if (position.y > target!!.y) {
+                possibleMoves.add(if (dy < wrappedDy) Direction.NORTH else Direction.SOUTH)
+            }
+
+            return possibleMoves
         }
+
+    fun isGoodMove(direction: Direction): Boolean {
+        return optimalMoves.contains(direction) && isAllowedOnPosition(position.directionalOffset(direction))
     }
 
-    fun update(oldShip: Ship) {
-        task = oldShip.task
+    fun updateFromOldShip() {
+        if (oldShip != null) {
+            task = oldShip.task
+            target = oldShip.target
+        }
     }
 
     override fun toString(): String {
-        return "Ship #$id (position: $initialPosition, newPosition: $position, halite: $halite, task: $task, navAction: $navAction, target: ${target?.position ?: "not set"})"
-    }
-
-    companion object {
-        internal fun _generate(playerId: Int): Ship {
-            val input = Input.readInput()
-
-            val shipId = input.nextInt
-            val x = input.nextInt
-            val y = input.nextInt
-            val halite = input.nextInt
-
-            return Ship(playerId, shipId, Position(x, y), halite)
-        }
+        return "Ship #$id (initPosition: $initialPosition, newPosition: $position, halite: $halite, task: $task, navAction: $navAction, target: ${target ?: "not set"}"
     }
 }

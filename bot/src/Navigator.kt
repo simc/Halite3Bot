@@ -3,7 +3,7 @@ import java.lang.IllegalStateException
 class Navigator {
     fun doNavigation() {
         //Move ship on shipyard first
-        if (Game.me.shipyard.mapCell.hasShip) {
+        if (Game.me.shipyard.mapCell.ship?.isMine == true) {
             navigateShip(Game.me.shipyard.mapCell.ship!!)
         }
 
@@ -26,12 +26,12 @@ class Navigator {
         if (ship.task == Ship.Task.NONE)
             throw IllegalStateException("Task is not set: $ship")
 
-        if (ship.target == ship.mapCell) {
+        if (ship.reachedTarget) {
             Log.log(ship.toString())
             throw IllegalStateException("Ship arrived with no command: $ship")
         }
 
-        val moves = Game.map.getUnsafeMoves(ship.position, ship.target!!.position).shuffled()
+        val moves = Game.map.getUnsafeMoves(ship.position, ship.target!!).shuffled()
 
         //Find possible swaps in optimal direction
         for (move in moves) {
@@ -41,7 +41,18 @@ class Navigator {
         }
 
         //Try to move in optimal direction
-        for (move in moves) {
+        val movesSortedByDangerAndCost = moves.sortedWith(compareBy ({
+            if (ship.halite > 600) {
+                Game.map.at(ship.position.directionalOffset(it)).reachableCells.count { cell ->
+                    cell.ship?.isMine == false
+                }
+            } else {
+                0
+            }
+        },  {
+            Game.map.at(ship.position.directionalOffset(it)).halite
+        }))
+        for (move in movesSortedByDangerAndCost) {
             if (tryMoveInDirection(ship, move)) {
                 return
             }
@@ -58,7 +69,13 @@ class Navigator {
 
         //Move in other direction if not near a dropoff
         if (moves.size < 4) {
-            if (!ship.isOnWayBack || ship.mapCell.nextDropOffDistance > 2) {
+            val movesLeft = (Direction.ALL_CARDINALS - moves).shuffled().toMutableList()
+            //for (move in movesLeft) {
+                //if (tryMoveInDirection(ship, move, true)) {
+                    //return
+                //}
+            //}
+            if (!ship.isOnWayBack || ship.mapCell.nextDropoffDistance > 2) {
                 val movesLeft = (Direction.ALL_CARDINALS - moves).shuffled().toMutableList()
                 val lastMove = Game.history.lastTurn?.getMove(ship)
 
@@ -117,13 +134,10 @@ class Navigator {
         val newCell = Game.map.at(newPosition)
         val otherShip = newCell.ship
         if (otherShip != null && otherShip.isMine && !otherShip.isNavigationFinished) {
-            val otherShipMoves = Game.map.getUnsafeMoves(otherShip.position, otherShip.target!!.position)
+            val otherShipMoves = Game.map.getUnsafeMoves(otherShip.position, otherShip.target!!)
             val otherShipSwapGood = otherShipMoves.contains(direction.invertDirection())
             val otherShipPositionAllowed = isAllowedOnPosition(otherShip, ship.position)
             if (otherShipSwapGood && otherShipPositionAllowed) {
-                otherShip.mapCell.ship = ship
-                ship.mapCell.ship = otherShip
-
                 otherShip.position = ship.position
                 ship.position = newPosition
 
@@ -142,9 +156,7 @@ class Navigator {
 
     private fun tryMoveInDirection(ship: Ship, direction: Direction, moveBlockingShip: Boolean = false): Boolean {
         fun performMove() {
-            ship.mapCell.ship = null
             ship.position = ship.position.directionalOffset(direction)
-            ship.mapCell.ship = ship
 
             ship.navMove(direction)
             sendNavigation(ship)
@@ -183,13 +195,13 @@ class Navigator {
 
     private fun isAllowedOnPosition(ship: Ship, position: Position): Boolean {
         val cell = Game.map.at(position)
-        val isDropOff = cell.structure?.isMine == true
+        val isDropoff = cell.structure?.isMine == true
         val noFullShipNearby = iterateByDistance(position, 2).none { it.ship?.isOnWayBack == true }
-        return (!isDropOff || ship.isOnWayBack || ship.isEndGameSuicide || noFullShipNearby) && !cell.reserved
+        return (!isDropoff || ship.isOnWayBack || ship.isEndGameSuicide || noFullShipNearby) && !cell.reserved
     }
 
     private fun sendNavigation(ship: Ship) {
-        if (ship.navAction == Ship.NavAction.BUILD_DROP_OFF) {
+        if (ship.navAction == Ship.NavAction.BUILD_DROPOFF) {
             Game.sendCommand(Command.transformShipIntoDropoffSite(ship.id))
             ship.commandSent = true
             Game.history.currentTurn.doMove(ship, ship.navDirection!!)

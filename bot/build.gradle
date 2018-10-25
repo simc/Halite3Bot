@@ -31,13 +31,6 @@ dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
 }
 
-task buildDebug(type: GradleBuild, dependsOn: build) {
-    project.version = '1.0-debug'
-    compileJava {
-        options.debug = true
-    }
-}
-
 jar {
     manifest {
         attributes('Main-Class': 'MyBot')

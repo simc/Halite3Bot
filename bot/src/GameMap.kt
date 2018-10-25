@@ -1,7 +1,8 @@
-import java.util.*
+import kotlin.collections.ArrayList
 
 class GameMap(val size: Int) {
     val cells: Array<Array<MapCell>>
+    lateinit var flatCells: ArrayList<MapCell>
     var totalHalite = 0
     val currentHalite: Int
         get() {
@@ -21,7 +22,7 @@ class GameMap(val size: Int) {
     }
 
     fun at(position: Position): MapCell {
-        val normalized = normalize(position)
+        val normalized = position.normalize()
         return cells[normalized.x][normalized.y]
     }
 
@@ -32,8 +33,8 @@ class GameMap(val size: Int) {
     fun getUnsafeMoves(source: Position, destination: Position): ArrayList<Direction> {
         val possibleMoves = ArrayList<Direction>()
 
-        val normalizedSource = normalize(source)
-        val normalizedDestination = normalize(destination)
+        val normalizedSource = source.normalize()
+        val normalizedDestination = destination.normalize()
 
         val dx = Math.abs(normalizedSource.x - normalizedDestination.x)
         val dy = Math.abs(normalizedSource.y - normalizedDestination.y)
@@ -55,10 +56,13 @@ class GameMap(val size: Int) {
         return possibleMoves
     }
 
-    fun _update() {
+    fun update() {
+        flatCells = arrayListOf()
         for (x in 0 until size) {
             for (y in 0 until size) {
-                cells[x][y] = MapCell(Position(x, y), cells[x][y].halite)
+                val cell = MapCell(Position(x, y), cells[x][y].halite)
+                cells[x][y] = cell
+                flatCells.add(cell)
             }
         }
 
@@ -70,19 +74,6 @@ class GameMap(val size: Int) {
             val y = input.nextInt
 
             cells[x][y].halite = input.nextInt
-        }
-
-        //Update ships and structures in cells
-        for (player in Game.players) {
-            for (ship in player.ships) {
-                ship.mapCell.ship = ship
-            }
-
-            player.shipyard.mapCell.structure = player.shipyard
-
-            for (dropOff in player.dropoffs) {
-                dropOff.mapCell.structure = dropOff
-            }
         }
     }
 

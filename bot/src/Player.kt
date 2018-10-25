@@ -1,41 +1,45 @@
-class Player private constructor(val id: Int, val shipyard: Shipyard) {
+class Player constructor(val id: Int, val shipyard: Shipyard) {
     var halite: Int = 0
     var ships = arrayListOf<Ship>()
-    val dropoffs = arrayListOf<DropOff>()
+    val dropoffs = arrayListOf<Dropoff>()
 
     val allDropoffs: List<Entity>
         get() = dropoffs + shipyard
 
-    internal fun _update(numShips: Int, numDropoffs: Int, halite: Int) {
+    fun update(numShips: Int, numDropoffs: Int, halite: Int) {
         this.halite = halite
 
         val oldShips = ships
         ships = arrayListOf()
         for (i in 0 until numShips) {
-            val ship = Ship._generate(id)
-            val oldShip = oldShips.firstOrNull { it.id == ship.id }
-            if (oldShip != null) {
-                ship.update(oldShip)
-            }
-            ships.add(ship)
+            ships.add(generateShip(oldShips))
         }
 
         dropoffs.clear()
         for (i in 0 until numDropoffs) {
-            dropoffs.add(DropOff.generate(id))
+            dropoffs.add(generateDropoff())
         }
     }
 
-    companion object {
+    private fun generateShip(oldShips: List<Ship>): Ship {
+        val input = Input.readInput()
 
-        internal fun _generate(): Player {
-            val input = Input.readInput()
+        val shipId = input.nextInt
+        val x = input.nextInt
+        val y = input.nextInt
+        val halite = input.nextInt
 
-            val playerId = input.nextInt
-            val shipyard_x = input.nextInt
-            val shipyard_y = input.nextInt
+        val oldShip = oldShips.firstOrNull { it.id == shipId }
+        return Ship(id, shipId, Position(x, y), halite, oldShip)
+    }
 
-            return Player(playerId, Shipyard(playerId, Position(shipyard_x, shipyard_y)))
-        }
+    private fun generateDropoff(): Dropoff {
+        val input = Input.readInput()
+
+        val dropoffId = input.nextInt
+        val x = input.nextInt
+        val y = input.nextInt
+
+        return Dropoff(id, dropoffId, Position(x, y))
     }
 }
