@@ -1,5 +1,3 @@
-import javafx.geometry.Pos
-
 fun drawMap(cellContent: (position: Position) -> String) {
     val title = (0 until Game.map.size).joinToString(separator = "|", transform = {if (it < 10) " $it" else "$it"})
     Log.log("   $title")
@@ -16,6 +14,8 @@ fun drawHaliteFields(fields: List<List<MapCell>>, drawBorders: Boolean, possible
     val fieldCells = fields.flatten()
     drawMap { position ->
         if (Game.me.shipyard.position == position) {
+            " \uD83C\uDFE1 "
+        } else if (Game.me.dropoffs.any { it.position == position }) {
             " \uD83C\uDFE0 "
         } else if (possibleDropoffs.contains(position)) {
             " ❌ "

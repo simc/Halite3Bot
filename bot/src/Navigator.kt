@@ -13,7 +13,7 @@ class Navigator {
     }
 
     private fun navigateShip(ship: Ship, moveBlockingShips: Boolean = true) {
-        if (ship.isNavigationFinished) {
+        if (ship.hasNavigation) {
             if (!ship.commandSent) {
                 sendNavigation(ship)
             }
@@ -133,7 +133,7 @@ class Navigator {
 
         val newCell = Game.map.at(newPosition)
         val otherShip = newCell.ship
-        if (otherShip != null && otherShip.isMine && !otherShip.isNavigationFinished) {
+        if (otherShip != null && otherShip.isMine && !otherShip.hasNavigation) {
             val otherShipMoves = Game.map.getUnsafeMoves(otherShip.position, otherShip.target!!)
             val otherShipSwapGood = otherShipMoves.contains(direction.invertDirection())
             val otherShipPositionAllowed = isAllowedOnPosition(otherShip, ship.position)
@@ -175,7 +175,7 @@ class Navigator {
                     performMove()
                     return true
 
-                } else if (moveBlockingShip && !otherShip.isNavigationFinished) {
+                } else if (moveBlockingShip && !otherShip.hasNavigation) {
                     navigateShip(otherShip, moveBlockingShips = false)
                     return tryMoveInDirection(ship, direction)
                 }

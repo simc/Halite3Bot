@@ -1,9 +1,15 @@
-import java.util.ArrayList
-
 class Ship(owner: Int, id: Int, position: Position, val halite: Int, val oldShip: Ship?) : Entity(owner, id, position) {
 
     enum class Task {
-        NONE, DIG, GOTO_DROPOFF, BUILD_DROPOFF, END_GAME_SUICIDE, END_GAME_KAMIKAZE
+        NONE, //No task
+        DIG,
+        DIG_FIELDS, //Dig normal fields from outside in
+        DIG_REWARD, //Dig cells with higher than average reward
+        DIG_SPECIAL_REWARD, //Dig cells with very, very high reward
+        GOTO_DROPOFF, //Target next droppoff preferably choose a safe way
+        BUILD_DROPOFF, //Go to a specific location and build a dropoff
+        END_GAME_SUICIDE, //Go to next dropoff and kill yourself
+        END_GAME_KAMIKAZE //Try to kill a high value enemy ship
     }
 
     enum class NavAction {
@@ -47,7 +53,7 @@ class Ship(owner: Int, id: Int, position: Position, val halite: Int, val oldShip
     val isEndGameKamikaze: Boolean
         get() = task == Task.END_GAME_KAMIKAZE
 
-    val isNavigationFinished: Boolean
+    val hasNavigation: Boolean
         get() = navAction != NavAction.NONE
 
     val dropoffCost: Int

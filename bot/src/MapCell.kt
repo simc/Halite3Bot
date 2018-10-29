@@ -3,7 +3,6 @@ import Constants.INSPIRATION_RADIUS
 import Constants.INSPIRATION_SHIP_COUNT
 import Constants.INSPIRED_BONUS_MULTIPLIER
 import Constants.INSPIRED_EXTRACT_RATIO
-import java.lang.reflect.Field
 
 class MapCell(val position: Position, var halite: Int) {
     var ship: Ship? = null
@@ -29,20 +28,24 @@ class MapCell(val position: Position, var halite: Int) {
     val leaveCost: Int
         get() = halite / Constants.MOVE_COST_RATIO
 
-    var reward: Int = -1
+    val miningReward: Int
+        get() = Math.ceil(halite.toDouble() / EXTRACT_RATIO).toInt()
+
+    private var inspirationRewardCache: Int? = null
+    val inspirationReward: Int
         get() {
-            if (field == -1) {
-                field = if (enemiesInRange(position, INSPIRATION_RADIUS) >= INSPIRATION_SHIP_COUNT) {
-                    val extractAmount = halite.toDouble() / INSPIRED_EXTRACT_RATIO
-                    val extractBonus = extractAmount * INSPIRED_BONUS_MULTIPLIER
-                    Math.ceil(extractAmount + extractBonus).toInt()
-                } else {
-                    Math.ceil(halite.toDouble() / EXTRACT_RATIO).toInt()
-                }
+            if (inspirationRewardCache == null) {
+                inspirationRewardCache = if (enemiesInRange(position, INSPIRATION_RADIUS) >= INSPIRATION_SHIP_COUNT)
+                    Math.ceil(miningReward  * INSPIRED_BONUS_MULTIPLIER).toInt()
+                else
+                    0
             }
-            return field
+
+            return inspirationRewardCache!!
         }
-        private set
+
+    val reward: Int
+        get() = miningReward + inspirationReward
 
     val reachableCells: List<MapCell>
         get() = listOf(
@@ -72,7 +75,6 @@ class MapCell(val position: Position, var halite: Int) {
     val nextDropoffDistance: Int
         get() = calculateDistance(nextDropoff.position, position)
 
-    var field: Field? = null
     val fieldEdges = booleanArrayOf(false, false, false, false)
 
     override fun toString(): String {

@@ -1,5 +1,3 @@
-import java.util.*
-
 object Game {
     var turnNumber = 0
     var myId = -1
